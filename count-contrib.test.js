@@ -23,29 +23,23 @@ test('getAllContributorsForOrg', (t) => {
   t.test('# should return contributors in the last 90 days', async (assert) => {
     // Mock the organization's repository list response
     mock.onGet(`https://api.github.com/orgs/${orgName}/repos`).reply(200, [
-      { name: 'repo1' },
-      { name: 'repo2' },
-    ]);
+        { name: 'repo1' },
+        { name: 'repo2' },
+      ]
+    );
 
     // Mock the events for each repository
-    mock.onGet(`https://api.github.com/repos/${orgName}/repo1/events`).reply(config => {
-      if (config.params.page == 1) {
-        return [
-          200,
-          [
-            { type: 'PushEvent', actor: { login: 'user1' }, created_at: eightyNineDaysAgo.toISOString() },
-            { type: 'ForkEvent', actor: { login: 'user2' }, created_at: eightyNineDaysAgo.toISOString() },
-          ]
-        ]
-      } else {
-        return [
-          200,
-          [
-            { type: 'PushEvent', actor: { login: 'user3' }, created_at: eightyNineDaysAgo.toISOString() },
-          ]
-        ]
+    mock.onGet(`https://api.github.com/repos/${orgName}/repo1/events`, { params: { page: 1, per_page: 100 }}).reply(200, [
+        { type: 'PushEvent', actor: { login: 'user1' }, created_at: eightyNineDaysAgo.toISOString() },
+        { type: 'ForkEvent', actor: { login: 'user2' }, created_at: eightyNineDaysAgo.toISOString() },
+      ],
+      {
+        link: 'rel="next"'
       }
-    });
+    );
+    mock.onGet(`https://api.github.com/repos/${orgName}/repo1/events`, { params: { page: 2, per_page: 100 }}).reply(200, [
+      { type: 'PushEvent', actor: { login: 'user3' }, created_at: eightyNineDaysAgo.toISOString() },
+    ]);
 
     mock.onGet(`https://api.github.com/repos/${orgName}/repo2/events`).reply(200, [
       { type: 'PushEvent', actor: { login: 'user4' }, created_at: eightyNineDaysAgo.toISOString() },
@@ -56,7 +50,7 @@ test('getAllContributorsForOrg', (t) => {
     const contributors = await getAllContributorsForOrg();
 
     // Assertions
-    assert.deepEqual(contributors, ['user1', 'user3'], 'Contributors match expected result');
+    assert.deepEqual(contributors, ['user1', 'user3', 'user4'], 'Contributors match expected result');
 
     // End the test
     assert.end();
