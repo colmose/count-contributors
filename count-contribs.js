@@ -13,6 +13,7 @@ async function getAllContributorsForOrg() {
     const reposResponse = await axios.get(`https://api.github.com/orgs/${orgName}/repos`, {
       headers: {
         Authorization: `token ${token}`,
+        Accept: "application/vnd.github+json"
       },
     });
 
@@ -27,6 +28,7 @@ async function getAllContributorsForOrg() {
         const eventsResponse = await axios.get(`https://api.github.com/repos/${orgName}/${repo.name}/events`, {
           headers: {
             Authorization: `token ${token}`,
+            Accept: "application/vnd.github+json"
           },
           params: {
             per_page: 100,
@@ -64,7 +66,7 @@ async function getAllContributorsForOrg() {
     // Convert the set to an array of contributors
     const contributorsArray = Array.from(contributorsSet);
 
-    console.log('\nContributors in the last 90 days:', contributorsArray);
+    console.log(`\nContributors in the last ${startDays} days:`, contributorsArray);
     console.log('\nTotal number of contributors:', contributorsArray.length);
     return contributorsArray;
 
